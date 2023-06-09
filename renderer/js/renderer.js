@@ -13,18 +13,41 @@ function loadImage(e) {
         return;
     }
 
-    //Get original dimensions
+    // Create a new window for the preview
+    const previewWindow = window.open('preview.html', '_blank');
+
+    // Get original dimensions
     const image = new Image();
     image.src = URL.createObjectURL(file);
     image.onload = function() {
-        heightInput.value = this.height;
-        widthInput.value = this.width;
+        const imageWidth = this.width;
+        const imageHeight = this.height;
+
+        // Set width and height of the preview window
+        console.log(imageWidth, imageHeight);
+        const windowWidth = imageWidth + 50;
+        const windowHeight = imageHeight + 80;
+        console.log(windowWidth, windowHeight);
+        previewWindow.resizeTo(windowWidth, windowHeight);
+
+        // Pass the image file path and dimensions to the preview window
+        previewWindow.onload = function() {
+            previewWindow.postMessage({
+                imagePath: URL.createObjectURL(file),
+                width: imageWidth,
+                height: imageHeight
+            }, '*');
+            const previewImage = previewWindow.document.createElement('img');
+            previewImage.src = URL.createObjectURL(file);
+            previewWindow.document.body.appendChild(previewImage);
+        };
     }
 
     form.style.display = 'block';
     filename.innerText = file.name;
     outputPath.innerText = path.join(os.homedir(), 'Image_Resizer');
 }
+
 
 // Send image to main
 function sendImage(e) {
@@ -91,3 +114,17 @@ function alertSuccess(message) {
 
 img.addEventListener('change', loadImage);
 form.addEventListener('submit', sendImage);
+
+// //on input change update preview
+// widthInput.addEventListener('input', updatePreview);
+// heightInput.addEventListener('input', updatePreview);
+
+
+// function updatePreview() {
+//     const width = widthInput.value;
+//     const height = heightInput.value;
+
+//     const previewImage = document.querySelector('#preview-image');
+//     previewImage.style.width = width + 'px';
+//     previewImage.style.height = height + 'px';
+// }

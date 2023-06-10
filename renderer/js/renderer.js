@@ -4,6 +4,10 @@ const outputPath = document.querySelector('#output-path');
 const filename = document.querySelector('#filename');
 const heightInput = document.querySelector('#height');
 const widthInput = document.querySelector('#width');
+const brightnessValue = document.querySelector('.brightness')
+
+let previewImage;
+let previewWindow;
 
 function loadImage(e) {
     const file = e.target.files[0];
@@ -13,21 +17,22 @@ function loadImage(e) {
         return;
     }
 
-    // Create a new window for the preview
-    const previewWindow = window.open('preview.html', '_blank');
-
+     previewWindow = window.open('preview.html', '_blank');
+    
     // Get original dimensions
     const image = new Image();
     image.src = URL.createObjectURL(file);
     image.onload = function() {
+        heightInput.value = this.height;
+        widthInput.value = this.width;
         const imageWidth = this.width;
         const imageHeight = this.height;
 
         // Set width and height of the preview window
-        console.log(imageWidth, imageHeight);
+        
         const windowWidth = imageWidth + 50;
         const windowHeight = imageHeight + 80;
-        console.log(windowWidth, windowHeight);
+        
         previewWindow.resizeTo(windowWidth, windowHeight);
 
         // Pass the image file path and dimensions to the preview window
@@ -37,15 +42,23 @@ function loadImage(e) {
                 width: imageWidth,
                 height: imageHeight
             }, '*');
-            const previewImage = previewWindow.document.createElement('img');
+            previewImage = previewWindow.document.createElement('img');
+            previewImage.id = 'preview-image';
             previewImage.src = URL.createObjectURL(file);
             previewWindow.document.body.appendChild(previewImage);
+            previewImage.style.width = imageWidth + 'px';
+            previewImage.style.height = imageHeight + 'px';
+            
+
+            
         };
     }
 
     form.style.display = 'block';
     filename.innerText = file.name;
     outputPath.innerText = path.join(os.homedir(), 'Image_Resizer');
+
+    
 }
 
 
@@ -115,16 +128,39 @@ function alertSuccess(message) {
 img.addEventListener('change', loadImage);
 form.addEventListener('submit', sendImage);
 
-// //on input change update preview
-// widthInput.addEventListener('input', updatePreview);
-// heightInput.addEventListener('input', updatePreview);
 
+// Update preview image on width input change
+widthInput.addEventListener('input', function() {
+    const newWidth = parseInt(widthInput.value);
+    console.log("new width: " + newWidth);
+    updatePreviewImageSize(newWidth, null);
+});
 
-// function updatePreview() {
-//     const width = widthInput.value;
-//     const height = heightInput.value;
+// Update preview image on height input change
+heightInput.addEventListener('input', function() {
+    const newHeight = parseInt(heightInput.value);
+    console.log("new height: " + newHeight);
+    updatePreviewImageSize(null, newHeight);
+});
 
-//     const previewImage = document.querySelector('#preview-image');
-//     previewImage.style.width = width + 'px';
-//     previewImage.style.height = height + 'px';
-// }
+// Function to update the size of the preview image
+function updatePreviewImageSize(newWidth, newHeight) {
+    if (!previewImage) {
+        console.error('Preview image element not found');
+        return;
+    }
+
+    // Get the current width and height values as integers
+    const currentWidth = parseInt(previewImage.style.width);
+    const currentHeight = parseInt(previewImage.style.height);
+
+    // Calculate new dimensions if only one of width or height is provided
+    const updatedWidth = newWidth || currentWidth;
+    const updatedHeight = newHeight || currentHeight;
+
+    // Update the style properties of the preview image
+    previewImage.style.width = updatedWidth + 'px';
+    previewImage.style.height = updatedHeight + 'px';
+
+    previewWindow.resizeTo(updatedWidth + 50, updatedHeight + 80);
+}

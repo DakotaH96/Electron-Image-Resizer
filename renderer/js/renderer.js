@@ -8,6 +8,7 @@ const brightnessValue = document.querySelector('.brightness')
 
 let previewImage;
 let previewWindow;
+let brightnessAdjusted;
 
 function loadImage(e) {
     const file = e.target.files[0];
@@ -69,6 +70,7 @@ function sendImage(e) {
     const width = widthInput.value;
     const height = heightInput.value;
     const imgPath = img.files[0].path;
+    const brightness = brightnessAdjusted;
 
     if (!img.files[0]) {
         alertError('Please select an image file');
@@ -85,6 +87,7 @@ function sendImage(e) {
         imgPath,
         width,
         height,
+        brightness
     });
 }
 
@@ -143,6 +146,14 @@ heightInput.addEventListener('input', function() {
     updatePreviewImageSize(null, newHeight);
 });
 
+// Update brightness value and preview image on brightness slider change
+brightnessValue.addEventListener('input', function () {
+    const brightness = parseFloat(brightnessValue.value);
+    brightnessValue.innerText = brightness;
+    console.log("new brightness: " + brightness);
+    updatePreviewImageBrightness(brightness);
+  });
+
 // Function to update the size of the preview image
 function updatePreviewImageSize(newWidth, newHeight) {
     if (!previewImage) {
@@ -163,4 +174,21 @@ function updatePreviewImageSize(newWidth, newHeight) {
     previewImage.style.height = updatedHeight + 'px';
 
     previewWindow.resizeTo(updatedWidth + 50, updatedHeight + 80);
+
+    
 }
+
+
+// Function to update the brightness of the preview image
+function updatePreviewImageBrightness(brightness) {
+    if (!previewImage) {
+      console.error('Preview image element not found');
+      return;
+    }
+  
+    // Apply brightness filter to the preview image
+    previewImage.style.filter = `brightness(${brightness}%)`;
+
+    brightnessAdjusted = previewImage.style.filter;
+
+  }

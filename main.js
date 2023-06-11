@@ -1,10 +1,12 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const sharp = require('sharp');
 const resizeImg = require('resize-img');
 const {app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
 
-process.env.NODE_ENV = 'production';
+
+process.env.NODE_ENV = 'development';
 
 const isDev = process.env.NODE_ENV !== 'production';
 const isMac = process.platform === 'darwin';
@@ -99,37 +101,48 @@ ipcMain.on('image:resize', (e, options) => {
     
 });
 
-//Resize image
-async function resizeImage({ imgPath, width, height, dest }) {
+// Resize image
+async function resizeImage({ imgPath, width, height, brightness, dest }) {
     try {
-        const newPath = await resizeImg(fs.readFileSync(imgPath), {
-            width: +width,
-            height: +height,
-        })
-
-        //Create file name
-        const filename = 'resized-' + path.basename(imgPath);
-
-        //Create dest folder if it doesn't exist
-        if (!fs.existsSync(dest)) {
-            fs.mkdirSync(dest);
-        }
-
-        //Write new image to dest
-        fs.writeFileSync(path.join(dest, filename), newPath);
-
-        //Send success message to renderer
-        mainWindow.webContents.send('image:done');
-
-        //Open dest folder
-        shell.openPath(dest);
+      const image = sharp(imgPath);
+  
+      // Resize the image
+      image.resize({ width: +width, height: +height });
+  
+      // Extract the numeric value from brightness string
+      const brightnessValue = brightness.match(/\d+/);
+      const brightnessNumber = brightnessValue ? parseInt(brightnessValue[0]) : null;
+  
+      // Check if brightness is a valid number
+      if (!isNaN(brightnessNumber)) {
+        let adjustedBrightness = brightnessNumber / 100; // Scale between -1 and 1
+        adjustedBrightness -= .5;
+        
+        //if adjusted brightness is negative make it 0
+        if (adjustedBrightness < 0) adjustedBrightness = 0;
+        image.modulate({ brightness: adjustedBrightness });
+      } else {
+        throw new Error('Invalid brightness value: ' + brightness);
+      }
+  
+      // Create a file name for the resized image
+      const filename = 'resized-' + path.basename(imgPath);
+  
+      // Save the modified image
+      await image.toFile(path.join(dest, filename));
+  
+      // Send a success message to the renderer process
+      mainWindow.webContents.send('image:done');
+  
+      // Open the destination folder
+      shell.openPath(dest);
+    } catch (err) {
+      console.log(err);
     }
-    catch (err) {
-        console.log(err);
-    }
-    
-}
-
+  }
+  
+  
+  
 app.on('window-all-closed', () => {
     if (!isMac) {
         app.quit();
